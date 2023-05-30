@@ -1,76 +1,20 @@
---
--- PostgreSQL database dump
---
+CREATE DATABASE dev_db; -- База данных для разработки
+CREATE DATABASE prod_db; -- База данных для продакшена
 
--- Dumped from database version 14.8 (Homebrew)
--- Dumped by pg_dump version 14.8 (Homebrew)
+-- Подключение к базе данных dev_db
+\c dev_db;
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
-
---
--- Name: urls; Type: TABLE; Schema: public; Owner: nikogamsahurdia
---
-
-CREATE TABLE public.urls (
-    id integer NOT NULL,
-    name character varying(255) NOT NULL,
-    created_at timestamp without time zone DEFAULT now() NOT NULL
+CREATE TABLE urls (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Подключение к базе данных prod_db
+\c prod_db;
 
-ALTER TABLE public.urls OWNER TO nikogamsahurdia;
-
---
--- Name: urls_id_seq; Type: SEQUENCE; Schema: public; Owner: nikogamsahurdia
---
-
-CREATE SEQUENCE public.urls_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.urls_id_seq OWNER TO nikogamsahurdia;
-
---
--- Name: urls_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nikogamsahurdia
---
-
-ALTER SEQUENCE public.urls_id_seq OWNED BY public.urls.id;
-
-
---
--- Name: urls id; Type: DEFAULT; Schema: public; Owner: nikogamsahurdia
---
-
-ALTER TABLE ONLY public.urls ALTER COLUMN id SET DEFAULT nextval('public.urls_id_seq'::regclass);
-
-
---
--- Name: urls urls_pkey; Type: CONSTRAINT; Schema: public; Owner: nikogamsahurdia
---
-
-ALTER TABLE ONLY public.urls
-    ADD CONSTRAINT urls_pkey PRIMARY KEY (id);
-
-
---
--- PostgreSQL database dump complete
---
-
+CREATE TABLE urls (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
