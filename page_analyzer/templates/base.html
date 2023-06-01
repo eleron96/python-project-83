@@ -5,9 +5,26 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <!-- Подключение Bootstrap CSS через CDN -->
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <style>
+            .header {
+                background-color: grey;
+                padding: 10px;
+                text-align: left;
+                display: flex;
+                align-items: center;
+            }
+            .header a {
+                color: white;
+                font-size: 2em;
+                text-decoration: none;
+            }
+        </style>
         <title>Добавление URL</title>
     </head>
     <body>
+        <div class="header">
+            <a href="/" style="color: white; text-decoration: none;">Анализатор страниц</a>
+        </div>
         <!-- Форма ввода URL -->
         <div class="container">
 
