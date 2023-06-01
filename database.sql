@@ -8,3 +8,13 @@ CREATE TABLE urls (
   name VARCHAR(255) UNIQUE NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE url_checks (
+    id SERIAL PRIMARY KEY,
+    url_id INT,
+    status_code INT,
+    h1 TEXT,
+    title TEXT,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

@@ -2,7 +2,7 @@
 
 {% block content %}
     <div class="container">
-        <h1>{{ url }}</h1>
+        <h1>Сайт: {{ name }}</h1>
 
         <table class="table table-striped mt-3">
             <thead>
@@ -24,6 +24,40 @@
                     <td>Date Created</td>
                     <td>{{ created_at.strftime('%Y-%m-%d') }}</td>
                 </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="container">
+        <h1>Проверки</h1>
+
+        <form action="{{ url_for('check_url', url_id=id) }}" method="post">
+            <button type="submit" class="btn btn-primary">Проверить URL</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Код ответа</th>
+                    <th>h1</th>
+                    <th>title</th>
+                    <th>description</th>
+                    <th>Дата создания</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ id }}</td>
+                    <td>{{ url_code }}</td>
+                    <td>{{ url_h1 }}</td>
+                    <td>{{ url_title }}</td>
+                    <td>{{ url_description }}</td>
+                    <td>{{ created_at.strftime('%Y-%m-%d') }}</td>
+                </tr>
+
             </tbody>
         </table>
     </div>

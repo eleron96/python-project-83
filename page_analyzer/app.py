@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, flash
 from .db import get_connection
 from .urls import validate, normilize
+from datetime import datetime
 
 load_dotenv()
 
@@ -67,6 +68,18 @@ def urls_list():
     cursor.execute("SELECT id, name FROM urls ORDER BY id DESC")  # выбираем поля id, name и response_code
     urls = cursor.fetchall()
     return render_template("urls_list.html", urls=urls)
+
+
+@app.post("/urls/<int:url_id>/checks")
+def check_url(url_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO url_checks (url_id, created_at)
+        VALUES (%s, %s)
+    """, (url_id, datetime.now(),))
+    conn.commit()
+    return redirect(url_for('show_url', url_id=url_id))
 
 
 
