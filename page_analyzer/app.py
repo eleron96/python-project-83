@@ -88,13 +88,14 @@ def check_url(url_id):
     cursor = conn.cursor()
     cursor.execute("""
     INSERT INTO url_checks(url_id, created_at)
-    VALUES (%s, %s)
+    VALUES (%s, NOW())
     RETURNING id
-    """, (url_id, datetime.now()))
+    """, (url_id,))
     check_id = cursor.fetchone()[0]
     conn.commit()
     flash('URL check created successfully!', 'success')
     return redirect(url_for('show_url', url_id=url_id))
+
 
 
 
