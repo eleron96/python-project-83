@@ -1,8 +1,9 @@
+from datetime import datetime
+
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, flash
 from .db import get_connection
 from .urls import validate, normilize
-from datetime import datetime
 
 load_dotenv()
 
@@ -52,13 +53,19 @@ def add_url():
 def show_url(url_id):
     conn = get_connection()
     cursor = conn.cursor()
+
     cursor.execute("""
     SELECT id, name, created_at
     FROM urls
     WHERE id = %s
     """, (url_id,))
     url = cursor.fetchone()
-    return render_template("url.html", id=url[0], name=url[1], created_at=url[2])
+
+    cursor.execute("SELECT * FROM url_checks WHERE url_id = %s ORDER BY created_at DESC", (url_id,))
+    checks = cursor.fetchall()
+
+    return render_template("url.html", id=url[0], name=url[1], created_at=url[2], checks=checks)
+
 
 
 @app.route("/urls_list")
@@ -70,19 +77,19 @@ def urls_list():
     return render_template("urls_list.html", urls=urls)
 
 
-@app.post("/urls/<int:url_id>/checks")
+@app.route("/urls/<int:url_id>/checks", methods=['POST'])
 def check_url(url_id):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO url_checks (url_id, created_at)
-        VALUES (%s, %s)
-    """, (url_id, datetime.now(),))
+    INSERT INTO url_checks(url_id, created_at)
+    VALUES (%s, %s)
+    RETURNING id
+    """, (url_id, datetime.now()))
+    check_id = cursor.fetchone()[0]
     conn.commit()
+    flash('URL check created successfully!', 'success')
     return redirect(url_for('show_url', url_id=url_id))
-
-
-
 
 
 

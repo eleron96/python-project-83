@@ -31,9 +31,10 @@
     <div class="container">
         <h1>Проверки</h1>
 
-        <form action="{{ url_for('check_url', url_id=id) }}" method="post">
+        <form method="POST" action="{{ url_for('check_url', url_id=id) }}">
             <button type="submit" class="btn btn-primary">Проверить URL</button>
         </form>
+
     </div>
 
     <div class="container">
@@ -49,15 +50,16 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>{{ id }}</td>
-                    <td>{{ url_code }}</td>
-                    <td>{{ url_h1 }}</td>
-                    <td>{{ url_title }}</td>
-                    <td>{{ url_description }}</td>
-                    <td>{{ created_at.strftime('%Y-%m-%d') }}</td>
-                </tr>
-
+                {% for check in checks %}
+                    <tr>
+                        <td>{{ check[0] }}</td> <!-- id -->
+                        <td>{{ check[1] }}</td> <!-- status_code -->
+                        <td>{{ check[2] }}</td> <!-- h1 -->
+                        <td>{{ check[3] }}</td> <!-- title -->
+                        <td>{{ check[4] }}</td> <!-- description -->
+                        <td>{{ check[5].strftime('%Y-%m-%d') }}</td> <!-- created_at -->
+                    </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
