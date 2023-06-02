@@ -50,6 +50,7 @@ def add_url():
     return redirect(url_for('show_url', url_id=url_id))
 
 
+
 @app.route("/urls/<int:url_id>")
 def show_url(url_id):
     conn = get_connection()
@@ -110,13 +111,14 @@ def check_url(url_id):
 
     cursor.execute("""
     INSERT INTO url_checks(url_id, created_at, status_code, h1, description, title)
-    VALUES (%s, NOW(), %s, %s, %s, %s)
+    VALUES (%s, DATE(NOW()), %s, %s, %s, %s)
     RETURNING id
     """, (url_id, response.status_code, h1_text, description_text, title_text))
     check_id = cursor.fetchone()[0]
     conn.commit()
     flash('URL check created successfully!', 'success')
     return redirect(url_for('show_url', url_id=url_id))
+
 
 
 
