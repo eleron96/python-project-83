@@ -67,12 +67,17 @@ def show_url(url_id):
     return render_template("url.html", id=url[0], name=url[1], created_at=url[2], checks=checks)
 
 
-
 @app.route("/urls_list")
 def urls_list():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name FROM urls ORDER BY id DESC")  # выбираем поля id, name и response_code
+    cursor.execute("""
+    SELECT urls.id, urls.name, MAX(url_checks.created_at)
+    FROM urls
+    LEFT JOIN url_checks ON urls.id = url_checks.url_id
+    GROUP BY urls.id
+    ORDER BY urls.id DESC
+    """)  # выбираем поля id, name и дату последней проверки
     urls = cursor.fetchall()
     return render_template("urls_list.html", urls=urls)
 
