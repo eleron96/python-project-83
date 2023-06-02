@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from .db import get_connection
 from .urls import validate, normilize
 import requests
+from bs4 import BeautifulSoup
 
 load_dotenv()
 
@@ -92,25 +93,31 @@ def urls_list():
 def check_url(url_id):
     conn = get_connection()
     cursor = conn.cursor()
-
-    # получаем URL по id
     cursor.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
     url = cursor.fetchone()[0]
 
-    # выполняем GET-запрос к URL
     response = requests.get(url)
-    status_code = response.status_code  # извлекаем статус код
+    soup = BeautifulSoup(response.content, 'lxml')
+    h1_tag = soup.find('h1')
+    h1_text = h1_tag.text if h1_tag else None  # Extract text from h1 tag if it exists
+
+    title_tag = soup.find('title')  # Find the title tag
+    title_text = title_tag.text if title_tag else None  # Extract the title if it exists
+
+    meta_description_tag = soup.find('meta', attrs={'name': 'description'})  # Find the meta description tag
+    description_text = meta_description_tag['content'] if meta_description_tag else None  # Extract the description if it exists
 
     cursor.execute("""
-    INSERT INTO url_checks(url_id, status_code, created_at)
-    VALUES (%s, %s, NOW())
+    INSERT INTO url_checks(url_id, created_at, status_code, h1, description, title)
+    VALUES (%s, NOW(), %s, %s, %s, %s)
     RETURNING id
-    """, (url_id, status_code))  # добавляем статус код в запрос на вставку
+    """, (url_id, response.status_code, h1_text, description_text, title_text))
     check_id = cursor.fetchone()[0]
-
     conn.commit()
     flash('URL check created successfully!', 'success')
     return redirect(url_for('show_url', url_id=url_id))
+
+
 
 
 
