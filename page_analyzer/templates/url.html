@@ -57,7 +57,13 @@
                         <td>{{ check[2] }}</td> <!-- h1 -->
                         <td>{{ check[3] }}</td> <!-- title -->
                         <td>{{ check[4] }}</td> <!-- description -->
-                        <td>{{ check[5].date() }}</td> <!-- created_at -->
+                        <td>
+                            {% if check[5] %}
+                                {{ check[5].date() }} <!-- created_at -->
+                            {% else %}
+                                No date available
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
