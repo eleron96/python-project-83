@@ -1,7 +1,7 @@
 DROP TABLE if exists urls;
 
--- Подключение к базе данных dev_db
-\c dev_db;
+---- Подключение к базе данных dev_db
+--\c dev_db;
 
 CREATE TABLE urls (
   id SERIAL PRIMARY KEY,
