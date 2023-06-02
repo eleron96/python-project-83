@@ -5,6 +5,7 @@ from .urls import validate, normilize
 import requests
 from bs4 import BeautifulSoup
 
+
 load_dotenv()
 
 app = Flask(__name__)
