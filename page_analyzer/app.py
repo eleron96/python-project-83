@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, flash
 from .db import get_connection
 from .urls import validate, normilize
+import requests
 
 load_dotenv()
 
@@ -47,22 +48,20 @@ def add_url():
     return redirect(url_for('show_url', url_id=url_id))
 
 
-@app.route("/urls/<int:url_id>", methods=['GET', 'POST'])
+@app.route("/urls/<int:url_id>")
 def show_url(url_id):
     conn = get_connection()
     cursor = conn.cursor()
-
-    cursor.execute("""
-    SELECT id, name, created_at
-    FROM urls
-    WHERE id = %s
-    """, (url_id,))
+    cursor.execute("SELECT * FROM urls WHERE id = %s", (url_id,))
     url = cursor.fetchone()
 
-    cursor.execute("SELECT * FROM url_checks WHERE url_id = %s ORDER BY created_at DESC", (url_id,))
+    cursor.execute(
+        "SELECT * FROM url_checks WHERE url_id = %s ORDER BY created_at DESC",
+        (url_id,))
     checks = cursor.fetchall()
 
-    return render_template("url.html", id=url[0], name=url[1], created_at=url[2], checks=checks)
+    return render_template("url.html", id=url[0], name=url[1],
+                           created_at=url[2], checks=checks)
 
 
 @app.route("/urls_list")
@@ -70,29 +69,49 @@ def urls_list():
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-    SELECT urls.id, urls.name, MAX(url_checks.created_at)
+    SELECT urls.id, urls.name, checks.created_at, checks.status_code
     FROM urls
-    LEFT JOIN url_checks ON urls.id = url_checks.url_id
-    GROUP BY urls.id
-    ORDER BY urls.id DESC
-    """)  # выбираем поля id, name и дату последней проверки
+    LEFT JOIN (
+        SELECT url_id, status_code, created_at
+        FROM (
+            SELECT url_id, status_code, created_at,
+                ROW_NUMBER() OVER (PARTITION BY url_id ORDER BY created_at DESC) as rn
+            FROM url_checks
+        ) t
+        WHERE t.rn = 1
+    ) checks ON urls.id = checks.url_id
+    GROUP BY urls.id, checks.created_at, checks.status_code
+    ORDER BY CASE WHEN checks.created_at IS NULL THEN 1 ELSE 0 END, checks.created_at DESC
+    """)
     urls = cursor.fetchall()
     return render_template("urls_list.html", urls=urls)
+
 
 
 @app.route("/urls/<int:url_id>/checks", methods=['POST'])
 def check_url(url_id):
     conn = get_connection()
     cursor = conn.cursor()
+
+    # получаем URL по id
+    cursor.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
+    url = cursor.fetchone()[0]
+
+    # выполняем GET-запрос к URL
+    response = requests.get(url)
+    status_code = response.status_code  # извлекаем статус код
+
     cursor.execute("""
-    INSERT INTO url_checks(url_id, created_at)
-    VALUES (%s, NOW())
+    INSERT INTO url_checks(url_id, status_code, created_at)
+    VALUES (%s, %s, NOW())
     RETURNING id
-    """, (url_id,))
+    """, (url_id, status_code))  # добавляем статус код в запрос на вставку
     check_id = cursor.fetchone()[0]
+
     conn.commit()
     flash('URL check created successfully!', 'success')
     return redirect(url_for('show_url', url_id=url_id))
+
 
 
 
