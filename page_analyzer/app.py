@@ -41,10 +41,10 @@ def add_url():
         RETURNING id
         """, (normalized_url,))  # используем нормализованный URL
         url_id = cursor.fetchone()[0]
-        flash("URL успешно добавлен!", "success")
+        flash("Страница успешно добавлена", "success")
     else:
         url_id = existing_url[0]
-        flash("Данный URL уже есть в базе!", "warning")
+        flash("Страница уже существует", "warning")
 
     conn.commit()
     return redirect(url_for('show_url', url_id=url_id))
@@ -116,7 +116,7 @@ def check_url(url_id):
     """, (url_id, response.status_code, h1_text, description_text, title_text))
     check_id = cursor.fetchone()[0]
     conn.commit()
-    flash('URL check created successfully!', 'success')
+    flash('Страница успешно проверена', 'success')
     return redirect(url_for('show_url', url_id=url_id))
 
 
