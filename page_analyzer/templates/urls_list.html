@@ -17,7 +17,7 @@
             <tbody>
                 {% for url in urls %}
                     <tr>
-                        <th scope="row">{{ url.id }}</th> <!-- ID -->
+                        <td scope="row">{{ url.id }}</td> <!-- ID -->
                         <td>
                             <a href="{{ url_for('show_url', url_id=url.id) }}"> <!-- Гиперссылка на show_url -->
                                 {{ url.name }} <!-- Имя -->
