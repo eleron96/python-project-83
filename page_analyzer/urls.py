@@ -15,7 +15,7 @@ def validate(url):
         errors.append("Произошла ошибка при проверке")
     return errors  # возвращаем список ошибок, а не результат вызова append()
 
+
 def normilize(url):
     parsed_url = urlparse(url)
     return f"{parsed_url.scheme}://{parsed_url.netloc}"
-

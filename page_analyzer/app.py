@@ -5,7 +5,6 @@ from .urls import validate, normilize
 import requests
 from bs4 import BeautifulSoup
 
-
 load_dotenv()
 
 app = Flask(__name__)
@@ -50,16 +49,17 @@ def add_url():
     return redirect(url_for('show_url', url_id=url_id))
 
 
-
 @app.route("/urls/<int:url_id>")
 def show_url(url_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name, created_at FROM urls WHERE id = %s", (url_id,))
+    cursor.execute("SELECT id, name, created_at FROM urls WHERE id = %s",
+                   (url_id,))
     url = cursor.fetchone()
 
     cursor.execute(
-        "SELECT id, url_id, created_at, status_code, h1, description, title FROM url_checks WHERE url_id = %s ORDER BY created_at DESC",
+        "SELECT id, url_id, created_at, status_code, h1, description, "
+        "title FROM url_checks WHERE url_id = %s ORDER BY created_at DESC",
         (url_id,))
     checks_raw = cursor.fetchall()
 
@@ -75,8 +75,8 @@ def show_url(url_id):
             "title": check[6]
         })
 
-    return render_template("url.html", id=url[0], name=url[1], created_at=url[2], checks=checks)
-
+    return render_template("url.html", id=url[0], name=url[1],
+                           created_at=url[2], checks=checks)
 
 
 @app.route("/urls")
@@ -88,11 +88,13 @@ def urls_list():
     FROM urls
     LEFT JOIN (
         SELECT url_id, status_code, created_at,
-            ROW_NUMBER() OVER (PARTITION BY url_id ORDER BY created_at DESC) as rn
+            ROW_NUMBER() OVER (
+                PARTITION BY url_id ORDER BY created_at DESC) as rn
         FROM url_checks
     ) checks ON urls.id = checks.url_id
     WHERE checks.rn = 1
-    ORDER BY CASE WHEN checks.created_at IS NULL THEN 1 ELSE 0 END, checks.created_at DESC
+    ORDER BY CASE WHEN checks.created_at IS NULL THEN 1 ELSE 0 END,
+        checks.created_at DESC
     """)
     urls_raw = cursor.fetchall()
 
@@ -129,16 +131,15 @@ def check_url(url_id):
     title_text = title_tag.text if title_tag else ""
 
     meta_description_tag = soup.find('meta', attrs={'name': 'description'})
-    description_text = meta_description_tag['content'] if meta_description_tag else ""
+    description_text = meta_description_tag[
+        'content'] if meta_description_tag else ""
 
     cursor.execute("""
-    INSERT INTO url_checks(url_id, created_at, status_code, h1, description, title)
+    INSERT INTO url_checks(
+        url_id, created_at, status_code, h1, description, title)
     VALUES (%s, DATE(NOW()), %s, %s, %s, %s)
     RETURNING id
     """, (url_id, response.status_code, h1_text, description_text, title_text))
-    check_id = cursor.fetchone()[0]
     conn.commit()
     flash('Страница успешно проверена', 'success')
     return redirect(url_for('show_url', url_id=url_id))
-
-
