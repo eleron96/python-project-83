@@ -79,7 +79,7 @@ def show_url(url_id):
 
 
 
-@app.route("/urls_list")
+@app.route("/urls")
 def urls_list():
     conn = get_connection()
     cursor = conn.cursor()
