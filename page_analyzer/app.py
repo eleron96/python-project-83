@@ -122,13 +122,13 @@ def check_url(url_id):
 
     soup = BeautifulSoup(response.content, 'lxml')
     h1_tag = soup.find('h1')
-    h1_text = h1_tag.text if h1_tag else None
+    h1_text = h1_tag.text if h1_tag else ""
 
     title_tag = soup.find('title')
-    title_text = title_tag.text if title_tag else None
+    title_text = title_tag.text if title_tag else ""
 
     meta_description_tag = soup.find('meta', attrs={'name': 'description'})
-    description_text = meta_description_tag['content'] if meta_description_tag else None
+    description_text = meta_description_tag['content'] if meta_description_tag else ""
 
     cursor.execute("""
     INSERT INTO url_checks(url_id, created_at, status_code, h1, description, title)
