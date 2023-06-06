@@ -24,7 +24,7 @@ def add_url():
     if errors:
         for error in errors:
             flash(error, "danger")
-            return render_template("index.html", url=url), 400
+            return render_template("index.html", url=url), 422
 
     normalized_url = normilize(url)  # нормализация URL
     conn = get_connection()
@@ -116,6 +116,7 @@ def check_url(url_id):
 
     try:
         response = requests.get(url)
+        response.raise_for_status()
     except requests.exceptions.RequestException:
         flash('Произошла ошибка при проверке', 'danger')
         return redirect(url_for('show_url', url_id=url_id))
