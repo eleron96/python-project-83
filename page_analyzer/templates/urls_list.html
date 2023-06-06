@@ -17,22 +17,22 @@
             <tbody>
                 {% for url in urls %}
                     <tr>
-                        <th scope="row">{{ url[0] }}</th> <!-- ID -->
+                        <th scope="row">{{ url.id }}</th> <!-- ID -->
                         <td>
-                            <a href="{{ url_for('show_url', url_id=url[0]) }}"> <!-- Гиперссылка на show_url -->
-                                {{ url[1] }} <!-- Имя -->
+                            <a href="{{ url_for('show_url', url_id=url.id) }}"> <!-- Гиперссылка на show_url -->
+                                {{ url.name }} <!-- Имя -->
                             </a>
                         </td>
                         <td>
-                            {% if url[2] %}
-                                {{ url[2] }}
+                            {% if url.created_at %}
+                                {{ url.created_at }}
                             {% else %}
                                 Еще не проверялся
                             {% endif %}
                         </td> <!-- Последняя проверка -->
                         <td>
-                            {% if url[3] %}
-                                {{ url[3] }}
+                            {% if url.status_code %}
+                                {{ url.status_code }}
                             {% else %}
                                 Еще не проверялся
                             {% endif %}

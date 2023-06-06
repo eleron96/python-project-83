@@ -87,19 +87,25 @@ def urls_list():
     SELECT urls.id, urls.name, checks.created_at, checks.status_code
     FROM urls
     LEFT JOIN (
-        SELECT url_id, status_code, created_at
-        FROM (
-            SELECT url_id, status_code, created_at,
-                ROW_NUMBER() OVER (PARTITION BY url_id ORDER BY created_at DESC) as rn
-            FROM url_checks
-        ) t
-        WHERE t.rn = 1
+        SELECT url_id, status_code, created_at,
+            ROW_NUMBER() OVER (PARTITION BY url_id ORDER BY created_at DESC) as rn
+        FROM url_checks
     ) checks ON urls.id = checks.url_id
-    GROUP BY urls.id, checks.created_at, checks.status_code
+    WHERE checks.rn = 1
     ORDER BY CASE WHEN checks.created_at IS NULL THEN 1 ELSE 0 END, checks.created_at DESC
     """)
-    urls = cursor.fetchall()
+    urls_raw = cursor.fetchall()
+
+    urls = []
+    for url in urls_raw:
+        urls.append({
+            "id": url[0],
+            "name": url[1],
+            "created_at": url[2],
+            "status_code": url[3]
+        })
     return render_template("urls_list.html", urls=urls)
+
 
 
 
