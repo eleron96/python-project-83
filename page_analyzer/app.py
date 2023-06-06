@@ -55,16 +55,28 @@ def add_url():
 def show_url(url_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM urls WHERE id = %s", (url_id,))
+    cursor.execute("SELECT id, name, created_at FROM urls WHERE id = %s", (url_id,))
     url = cursor.fetchone()
 
     cursor.execute(
-        "SELECT * FROM url_checks WHERE url_id = %s ORDER BY created_at DESC",
+        "SELECT id, url_id, created_at, status_code, h1, description, title FROM url_checks WHERE url_id = %s ORDER BY created_at DESC",
         (url_id,))
-    checks = cursor.fetchall()
+    checks_raw = cursor.fetchall()
 
-    return render_template("url.html", id=url[0], name=url[1],
-                           created_at=url[2], checks=checks)
+    checks = []
+    for check in checks_raw:
+        checks.append({
+            "id": check[0],
+            "url_id": check[1],
+            "created_at": check[2],
+            "status_code": check[3],
+            "h1": check[4],
+            "description": check[5],
+            "title": check[6]
+        })
+
+    return render_template("url.html", id=url[0], name=url[1], created_at=url[2], checks=checks)
+
 
 
 @app.route("/urls_list")

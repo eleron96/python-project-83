@@ -52,15 +52,14 @@
             <tbody>
                 {% for check in checks %}
                     <tr>
-                        <td>{{ check[0] }}</td> <!-- id -->
-                        <td>{{ check[1] }}</td> <!-- status_code -->
-                        <td>{{ check[2] }}</td> <!-- h1 -->
-
-                        <td>{{ check[3] }}</td> <!-- title -->
-                        <td>{{ check[4] }}</td> <!-- description -->
+                        <td>{{ check.id }}</td> <!-- id -->
+                        <td>{{ check.status_code }}</td> <!-- status_code -->
+                        <td>{{ check.h1 }}</td> <!-- h1 -->
+                        <td>{{ check.title }}</td> <!-- title -->
+                        <td>{{ check.description }}</td> <!-- description -->
                         <td>
-                            {% if check[5] %}
-                                {{ check[5] }} <!-- created_at -->
+                            {% if check.created_at %}
+                                {{ check.created_at }} <!-- created_at -->
                             {% else %}
                                 No date available
                             {% endif %}
