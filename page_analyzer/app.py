@@ -107,8 +107,6 @@ def urls_list():
     return render_template("urls_list.html", urls=urls)
 
 
-
-
 @app.route("/urls/<int:url_id>/checks", methods=['POST'])
 def check_url(url_id):
     conn = get_connection()
@@ -116,16 +114,21 @@ def check_url(url_id):
     cursor.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
     url = cursor.fetchone()[0]
 
-    response = requests.get(url)
+    try:
+        response = requests.get(url)
+    except requests.exceptions.RequestException:
+        flash('Произошла ошибка при проверке', 'danger')
+        return redirect(url_for('show_url', url_id=url_id))
+
     soup = BeautifulSoup(response.content, 'lxml')
     h1_tag = soup.find('h1')
-    h1_text = h1_tag.text if h1_tag else None  # Extract text from h1 tag if it exists
+    h1_text = h1_tag.text if h1_tag else None
 
-    title_tag = soup.find('title')  # Find the title tag
-    title_text = title_tag.text if title_tag else None  # Extract the title if it exists
+    title_tag = soup.find('title')
+    title_text = title_tag.text if title_tag else None
 
-    meta_description_tag = soup.find('meta', attrs={'name': 'description'})  # Find the meta description tag
-    description_text = meta_description_tag['content'] if meta_description_tag else None  # Extract the description if it exists
+    meta_description_tag = soup.find('meta', attrs={'name': 'description'})
+    description_text = meta_description_tag['content'] if meta_description_tag else None
 
     cursor.execute("""
     INSERT INTO url_checks(url_id, created_at, status_code, h1, description, title)
@@ -136,11 +139,5 @@ def check_url(url_id):
     conn.commit()
     flash('Страница успешно проверена', 'success')
     return redirect(url_for('show_url', url_id=url_id))
-
-
-
-
-
-
 
 
