@@ -11,7 +11,7 @@ def validate(url):
         errors.append("Некорректный URL")
     if not url:
         errors.append("URL обязателен")
-    return errors
+    return errors.append("Произошла ошибка при проверке")
 
 def normilize(url):
     parsed_url = urlparse(url)
