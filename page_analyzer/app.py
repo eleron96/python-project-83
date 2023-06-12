@@ -12,9 +12,11 @@ app.config["SECRET_KEY"] = "secret"
 
 init_db_pool()  # Инициализация пула соединений с базой данных
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.post("/urls")
 def add_url():
@@ -51,7 +53,6 @@ def add_url():
         release_conn(conn)
 
     return redirect(url_for('show_url', url_id=url_id))
-
 
 
 @app.route("/urls/<int:url_id>")
@@ -152,7 +153,9 @@ def check_url(url_id):
             url_id, created_at, status_code, h1, description, title)
         VALUES (%s, DATE(NOW()), %s, %s, %s, %s)
         RETURNING id
-        """, (url_id, response.status_code, h1_text, description_text, title_text))
+        """, (
+            url_id, response.status_code, h1_text, description_text,
+            title_text))
         conn.commit()
         flash('Страница успешно проверена', 'success')
     finally:
