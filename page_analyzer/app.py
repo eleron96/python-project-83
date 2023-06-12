@@ -2,9 +2,6 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, flash
 from .db import get_conn, release_conn, init_db_pool
 from .urls import validate, normilize
-from .database_operations import (get_url_id, get_url_data, get_checks_data,
-                                  get_urls_list, get_url_name,
-                                  insert_url_check)
 import requests
 from bs4 import BeautifulSoup
 
@@ -34,11 +31,21 @@ def add_url():
     conn = get_conn()
     cursor = conn.cursor()
     try:
-        url_id = get_url_id(cursor, normalized_url)  # используем новую функцию
+        cursor.execute("""
+        SELECT id FROM urls WHERE name = %s
+        """, (normalized_url,))  # используем нормализованный URL
+        existing_url = cursor.fetchone()
 
-        if url_id is None:
+        if existing_url is None:
+            cursor.execute("""
+            INSERT INTO urls(name)
+            VALUES (%s)
+            RETURNING id
+            """, (normalized_url,))  # используем нормализованный URL
+            url_id = cursor.fetchone()[0]
             flash("Страница успешно добавлена", "success")
         else:
+            url_id = existing_url[0]
             flash("Страница уже существует", "warning")
 
         conn.commit()
@@ -53,8 +60,15 @@ def show_url(url_id):
     conn = get_conn()
     cursor = conn.cursor()
     try:
-        url = get_url_data(cursor, url_id)
-        checks_raw = get_checks_data(cursor, url_id)
+        cursor.execute("SELECT id, name, created_at FROM urls WHERE id = %s",
+                       (url_id,))
+        url = cursor.fetchone()
+
+        cursor.execute(
+            "SELECT id, url_id, created_at, status_code, h1, description, "
+            "title FROM url_checks WHERE url_id = %s ORDER BY created_at DESC",
+            (url_id,))
+        checks_raw = cursor.fetchall()
 
         checks = []
         for check in checks_raw:
@@ -67,11 +81,11 @@ def show_url(url_id):
                 "description": check[5],
                 "title": check[6]
             })
-
-        return render_template("url.html", id=url[0], name=url[1],
-                               created_at=url[2], checks=checks)
     finally:
         release_conn(conn)
+
+    return render_template("url.html", id=url[0], name=url[1],
+                           created_at=url[2], checks=checks)
 
 
 @app.route("/urls")
@@ -79,7 +93,20 @@ def urls_list():
     conn = get_conn()
     cursor = conn.cursor()
     try:
-        urls_raw = get_urls_list(cursor)
+        cursor.execute("""
+        SELECT urls.id, urls.name, checks.created_at, checks.status_code
+        FROM urls
+        LEFT JOIN (
+            SELECT url_id, status_code, created_at,
+                ROW_NUMBER() OVER (
+                    PARTITION BY url_id ORDER BY created_at DESC) as rn
+            FROM url_checks
+        ) checks ON urls.id = checks.url_id
+        WHERE checks.rn = 1
+        ORDER BY CASE WHEN checks.created_at IS NULL THEN 1 ELSE 0 END,
+            checks.created_at DESC
+        """)
+        urls_raw = cursor.fetchall()
 
         urls = []
         for url in urls_raw:
@@ -89,9 +116,10 @@ def urls_list():
                 "created_at": url[2],
                 "status_code": url[3]
             })
-        return render_template("urls_list.html", urls=urls)
     finally:
         release_conn(conn)
+
+    return render_template("urls_list.html", urls=urls)
 
 
 @app.route("/urls/<int:url_id>/checks", methods=['POST'])
@@ -99,7 +127,8 @@ def check_url(url_id):
     conn = get_conn()
     cursor = conn.cursor()
     try:
-        url = get_url_name(cursor, url_id)
+        cursor.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
+        url = cursor.fetchone()[0]
 
         try:
             response = requests.get(url)
@@ -116,13 +145,20 @@ def check_url(url_id):
         title_text = title_tag.text if title_tag else ""
 
         meta_description_tag = soup.find('meta', attrs={'name': 'description'})
-        description_text = meta_description_tag['content'] \
-            if meta_description_tag else ""
+        description_text = meta_description_tag[
+            'content'] if meta_description_tag else ""
 
-        insert_url_check(cursor, url_id, response, h1_text, description_text,
-                         title_text)
+        cursor.execute("""
+        INSERT INTO url_checks(
+            url_id, created_at, status_code, h1, description, title)
+        VALUES (%s, DATE(NOW()), %s, %s, %s, %s)
+        RETURNING id
+        """, (
+            url_id, response.status_code, h1_text, description_text,
+            title_text))
         conn.commit()
         flash('Страница успешно проверена', 'success')
-        return redirect(url_for('show_url', url_id=url_id))
     finally:
         release_conn(conn)
+
+    return redirect(url_for('show_url', url_id=url_id))
