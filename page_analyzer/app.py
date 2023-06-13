@@ -1,7 +1,9 @@
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, flash
-from .db import get_conn, release_conn, init_db_pool
-from .urls import validate, normilize
+from .db import get_conn, init_db_pool
+from .db_queries import get_url_by_name, add_url, get_url_by_id, \
+    get_url_checks_by_id, get_all_urls, add_url_check
+from .urls import validate, normalize
 import requests
 from bs4 import BeautifulSoup
 
@@ -19,114 +21,48 @@ def index():
 
 
 @app.post("/urls")
-def add_url():
+def add_url_route():
     url = request.form["url"]
     errors = validate(url)
     if errors:
         for error in errors:
             flash(error, "danger")
-            return render_template("index.html", url=url), 422
+        return render_template("index.html", url=url), 422
 
-    normalized_url = normilize(url)  # нормализация URL
-    conn = get_conn()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-        SELECT id FROM urls WHERE name = %s
-        """, (normalized_url,))  # используем нормализованный URL
-        existing_url = cursor.fetchone()
+    normalized_url = normalize(url)  # нормализация URL
+    with get_conn() as conn:
+        existing_url = get_url_by_name(conn, normalized_url)
 
         if existing_url is None:
-            cursor.execute("""
-            INSERT INTO urls(name)
-            VALUES (%s)
-            RETURNING id
-            """, (normalized_url,))  # используем нормализованный URL
-            url_id = cursor.fetchone()[0]
+            url_id = add_url(conn, normalized_url)
             flash("Страница успешно добавлена", "success")
         else:
             url_id = existing_url[0]
             flash("Страница уже существует", "warning")
-
-        conn.commit()
-    finally:
-        release_conn(conn)
 
     return redirect(url_for('show_url', url_id=url_id))
 
 
 @app.route("/urls/<int:url_id>")
 def show_url(url_id):
-    conn = get_conn()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT id, name, created_at FROM urls WHERE id = %s",
-                       (url_id,))
-        url = cursor.fetchone()
-
-        cursor.execute(
-            "SELECT id, url_id, created_at, status_code, h1, description, "
-            "title FROM url_checks WHERE url_id = %s ORDER BY created_at DESC",
-            (url_id,))
-        checks_raw = cursor.fetchall()
-
-        checks = []
-        for check in checks_raw:
-            checks.append({
-                "id": check[0],
-                "url_id": check[1],
-                "created_at": check[2],
-                "status_code": check[3],
-                "h1": check[4],
-                "description": check[5],
-                "title": check[6]
-            })
-    finally:
-        release_conn(conn)
-
+    with get_conn() as conn:
+        url = get_url_by_id(conn, url_id)
+        checks = get_url_checks_by_id(conn, url_id)
     return render_template("url.html", id=url[0], name=url[1],
                            created_at=url[2], checks=checks)
 
 
 @app.route("/urls")
 def urls_list():
-    conn = get_conn()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-        SELECT urls.id, urls.name, checks.created_at, checks.status_code
-        FROM urls
-        LEFT JOIN (
-            SELECT url_id, status_code, created_at,
-                ROW_NUMBER() OVER (
-                    PARTITION BY url_id ORDER BY created_at DESC) as rn
-            FROM url_checks
-        ) checks ON urls.id = checks.url_id
-        WHERE checks.rn = 1
-        ORDER BY CASE WHEN checks.created_at IS NULL THEN 1 ELSE 0 END,
-            checks.created_at DESC
-        """)
-        urls_raw = cursor.fetchall()
-
-        urls = []
-        for url in urls_raw:
-            urls.append({
-                "id": url[0],
-                "name": url[1],
-                "created_at": url[2],
-                "status_code": url[3]
-            })
-    finally:
-        release_conn(conn)
-
+    with get_conn() as conn:
+        urls = get_all_urls(conn)
     return render_template("urls_list.html", urls=urls)
 
 
 @app.route("/urls/<int:url_id>/checks", methods=['POST'])
 def check_url(url_id):
-    conn = get_conn()
-    cursor = conn.cursor()
-    try:
+    with get_conn() as conn:
+        cursor = conn.cursor()
         cursor.execute("SELECT name FROM urls WHERE id = %s", (url_id,))
         url = cursor.fetchone()[0]
 
@@ -148,17 +84,8 @@ def check_url(url_id):
         description_text = meta_description_tag[
             'content'] if meta_description_tag else ""
 
-        cursor.execute("""
-        INSERT INTO url_checks(
-            url_id, created_at, status_code, h1, description, title)
-        VALUES (%s, DATE(NOW()), %s, %s, %s, %s)
-        RETURNING id
-        """, (
-            url_id, response.status_code, h1_text, description_text,
-            title_text))
-        conn.commit()
+        check_id = add_url_check(conn, url_id, response.status_code, h1_text,
+                                 description_text, title_text)
         flash('Страница успешно проверена', 'success')
-    finally:
-        release_conn(conn)
 
     return redirect(url_for('show_url', url_id=url_id))

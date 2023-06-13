@@ -16,6 +16,6 @@ def validate(url):
     return errors  # возвращаем список ошибок, а не результат вызова append()
 
 
-def normilize(url):
+def normalize(url):
     parsed_url = urlparse(url)
     return f"{parsed_url.scheme}://{parsed_url.netloc}"
