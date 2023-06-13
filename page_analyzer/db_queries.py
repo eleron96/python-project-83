@@ -76,7 +76,8 @@ def get_all_urls(conn):
 def add_url_check(conn, url_id, status_code, h1, description, title):
     with conn.cursor() as cursor:
         cursor.execute("""
-            INSERT INTO url_checks(url_id, created_at, status_code, h1, description, title)
+            INSERT INTO url_checks(url_id, created_at, status_code, h1,
+             description, title)
             VALUES (%s, DATE(NOW()), %s, %s, %s, %s)
             RETURNING id
             """, (url_id, status_code, h1, description, title))

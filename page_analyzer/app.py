@@ -86,6 +86,7 @@ def check_url(url_id):
 
         check_id = add_url_check(conn, url_id, response.status_code, h1_text,
                                  description_text, title_text)
+        print(check_id)
         flash('Страница успешно проверена', 'success')
 
     return redirect(url_for('show_url', url_id=url_id))

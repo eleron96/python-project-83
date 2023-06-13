@@ -25,8 +25,5 @@ def get_conn():
         db_pool.putconn(conn)
 
 
-
-
 def release_conn(conn):
     db_pool.putconn(conn)
-
